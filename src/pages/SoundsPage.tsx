@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { PageLayout } from "@/components/PageLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music, Volume2, Play, Pause } from "lucide-react";
+import { Music, Volume2 } from "lucide-react";
 
 interface CatSound {
   name: string;
@@ -126,7 +126,7 @@ const categoryLabels = {
   other: "Other",
 };
 
-export default function SoundsPage() {
+const SoundsPage = forwardRef<HTMLDivElement>((_, ref) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [expandedSound, setExpandedSound] = useState<string | null>(null);
 
@@ -135,7 +135,7 @@ export default function SoundsPage() {
     : catSounds;
 
   return (
-    <PageLayout>
+    <PageLayout ref={ref}>
       {/* Header */}
       <div className="text-center mb-6">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -231,4 +231,8 @@ export default function SoundsPage() {
       </Card>
     </PageLayout>
   );
-}
+});
+
+SoundsPage.displayName = "SoundsPage";
+
+export default SoundsPage;

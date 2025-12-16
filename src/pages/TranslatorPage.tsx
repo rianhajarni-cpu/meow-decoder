@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef } from "react";
 import { PageLayout } from "@/components/PageLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume2, RefreshCw, Cat } from "lucide-react";
+import { Mic, MicOff, Volume2, RefreshCw, Cat, AlertCircle } from "lucide-react";
+import { useMicrophone } from "@/hooks/useMicrophone";
 import catMascot from "@/assets/cat-mascot.png";
 
 const catTranslations = [
@@ -44,39 +45,32 @@ const moodColors: Record<string, string> = {
   defensive: "bg-destructive/20 border-destructive",
 };
 
-export default function TranslatorPage() {
-  const [isListening, setIsListening] = useState(false);
+const TranslatorPage = forwardRef<HTMLDivElement>((_, ref) => {
+  const { isListening, error, startListening: startMic, stopListening: stopMic } = useMicrophone();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentTranslation, setCurrentTranslation] = useState<typeof catTranslations[0] | null>(null);
   const [waveformLevels, setWaveformLevels] = useState<number[]>(Array(12).fill(0.3));
   const animationRef = useRef<number>();
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
   const simulateWaveform = () => {
-    const newLevels = waveformLevels.map(() => 
-      0.3 + Math.random() * 0.7
-    );
+    const newLevels = Array(12).fill(0).map(() => 0.3 + Math.random() * 0.7);
     setWaveformLevels(newLevels);
     animationRef.current = requestAnimationFrame(simulateWaveform);
   };
 
-  const startListening = async () => {
+  const handleStartListening = async () => {
     try {
-      // Request microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      setIsListening(true);
+      await startMic();
       setCurrentTranslation(null);
       
-      // Simulate waveform animation
+      // Start waveform animation
       animationRef.current = requestAnimationFrame(simulateWaveform);
       
       // Simulate detection after random time
-      setTimeout(() => {
-        setIsListening(false);
+      timeoutRef.current = setTimeout(() => {
+        handleStopListening();
         setIsAnalyzing(true);
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-        setWaveformLevels(Array(12).fill(0.3));
         
         // Simulate analysis
         setTimeout(() => {
@@ -86,15 +80,18 @@ export default function TranslatorPage() {
         }, 1500);
       }, 2000 + Math.random() * 2000);
       
-    } catch (error) {
-      console.error("Microphone access denied:", error);
+    } catch (err) {
+      console.error("Failed to start listening:", err);
     }
   };
 
-  const stopListening = () => {
-    setIsListening(false);
+  const handleStopListening = () => {
+    stopMic();
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
     setWaveformLevels(Array(12).fill(0.3));
   };
@@ -102,13 +99,16 @@ export default function TranslatorPage() {
   const reset = () => {
     setCurrentTranslation(null);
     setIsAnalyzing(false);
-    setIsListening(false);
+    handleStopListening();
   };
 
   useEffect(() => {
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
   }, []);
@@ -153,11 +153,19 @@ export default function TranslatorPage() {
               ))}
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-center gap-2 text-destructive mb-4 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* Status Text */}
             <p className="text-sm font-medium text-muted-foreground mb-4">
               {isListening && "Listening for meows..."}
               {isAnalyzing && "Analyzing cat sound..."}
-              {!isListening && !isAnalyzing && !currentTranslation && "Tap the button to start"}
+              {!isListening && !isAnalyzing && !currentTranslation && !error && "Tap the button to start"}
               {currentTranslation && "Translation complete!"}
             </p>
 
@@ -167,7 +175,7 @@ export default function TranslatorPage() {
                 variant={isListening ? "destructive" : "glow"}
                 size="xl"
                 className="w-full max-w-xs"
-                onClick={isListening ? stopListening : startListening}
+                onClick={isListening ? handleStopListening : handleStartListening}
                 disabled={isAnalyzing}
               >
                 {isListening ? (
@@ -244,4 +252,8 @@ export default function TranslatorPage() {
       )}
     </PageLayout>
   );
-}
+});
+
+TranslatorPage.displayName = "TranslatorPage";
+
+export default TranslatorPage;

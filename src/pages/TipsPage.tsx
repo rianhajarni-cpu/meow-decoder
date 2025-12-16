@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { PageLayout } from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Eye, Heart, AlertTriangle, MessageCircle, Cat } from "lucide-react";
@@ -80,9 +81,9 @@ const communicationTips = [
   "Meowing increases with age - senior cats often become more vocal",
 ];
 
-export default function TipsPage() {
+const TipsPage = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <PageLayout>
+    <PageLayout ref={ref}>
       {/* Header */}
       <div className="text-center mb-6">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -180,4 +181,8 @@ export default function TipsPage() {
       </div>
     </PageLayout>
   );
-}
+});
+
+TipsPage.displayName = "TipsPage";
+
+export default TipsPage;

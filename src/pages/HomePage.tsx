@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,9 +37,9 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+const HomePage = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <PageLayout>
+    <PageLayout ref={ref}>
       {/* Hero Section */}
       <div className="text-center pt-4 pb-8">
         <div className="relative inline-block mb-6">
@@ -138,4 +139,8 @@ export default function HomePage() {
       </Card>
     </PageLayout>
   );
-}
+});
+
+HomePage.displayName = "HomePage";
+
+export default HomePage;

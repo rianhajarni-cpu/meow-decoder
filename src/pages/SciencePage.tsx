@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { PageLayout } from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FlaskConical, BookOpen, Brain, Mic2, Users } from "lucide-react";
@@ -44,9 +45,9 @@ const vocalCategories = [
   },
 ];
 
-export default function SciencePage() {
+const SciencePage = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <PageLayout>
+    <PageLayout ref={ref}>
       {/* Header */}
       <div className="text-center mb-8">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -146,4 +147,8 @@ export default function SciencePage() {
       </Card>
     </PageLayout>
   );
-}
+});
+
+SciencePage.displayName = "SciencePage";
+
+export default SciencePage;

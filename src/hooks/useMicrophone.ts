@@ -1,9 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-
-// Check if we're running in a Capacitor environment
-const isCapacitor = () => {
-  return typeof window !== 'undefined' && !!(window as any).Capacitor;
-};
+import { Capacitor } from '@capacitor/core';
 
 interface UseMicrophoneReturn {
   isListening: boolean;
@@ -27,9 +23,9 @@ export function useMicrophone(): UseMicrophoneReturn {
 
   const checkPermission = async () => {
     try {
-      if (isCapacitor()) {
-        // For Capacitor, we'll check when user tries to use the mic
-        console.log('Running in Capacitor environment');
+      if (Capacitor.isNativePlatform()) {
+        // On native, we'll check when trying to access
+        console.log('Running on native platform:', Capacitor.getPlatform());
         setHasPermission(null);
       } else {
         // For web, check using Permissions API
@@ -49,14 +45,13 @@ export function useMicrophone(): UseMicrophoneReturn {
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
       setError(null);
+      console.log('Requesting microphone permission...');
+      console.log('Platform:', Capacitor.getPlatform());
+      console.log('Is native:', Capacitor.isNativePlatform());
       
-      // Request microphone access
+      // Request microphone access - this triggers the native permission dialog
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
+        audio: true
       });
       
       // Permission granted, stop the stream immediately
@@ -66,12 +61,20 @@ export function useMicrophone(): UseMicrophoneReturn {
       return true;
     } catch (err: any) {
       console.error('Microphone permission error:', err);
+      console.error('Error name:', err.name);
+      console.error('Error message:', err.message);
       setHasPermission(false);
       
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Microphone access denied. Please enable it in your device settings.');
+        if (Capacitor.isNativePlatform()) {
+          setError('Microphone permission denied. Go to Settings > Apps > MeowSpeak > Permissions and enable Microphone.');
+        } else {
+          setError('Microphone access denied. Please enable it in your browser settings.');
+        }
       } else if (err.name === 'NotFoundError') {
         setError('No microphone found on this device.');
+      } else if (err.name === 'NotSupportedError') {
+        setError('Microphone not supported on this device.');
       } else {
         setError('Failed to access microphone: ' + err.message);
       }
@@ -82,6 +85,7 @@ export function useMicrophone(): UseMicrophoneReturn {
   const startListening = useCallback(async () => {
     try {
       setError(null);
+      console.log('Starting microphone...');
       
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -100,10 +104,15 @@ export function useMicrophone(): UseMicrophoneReturn {
       
     } catch (err: any) {
       console.error('Error starting microphone:', err);
+      console.error('Error name:', err.name);
       setIsListening(false);
       
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Microphone access denied. Please enable it in your device settings.');
+        if (Capacitor.isNativePlatform()) {
+          setError('Microphone permission denied. Go to Settings > Apps > MeowSpeak > Permissions and enable Microphone.');
+        } else {
+          setError('Microphone access denied. Please enable it in your browser settings.');
+        }
         setHasPermission(false);
       } else if (err.name === 'NotFoundError') {
         setError('No microphone found on this device.');
